@@ -1,0 +1,3 @@
+include 'integration_test'
+
+rootProject.name = 'Pathfinder-ARM'

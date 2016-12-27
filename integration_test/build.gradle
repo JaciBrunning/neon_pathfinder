@@ -1,0 +1,46 @@
+plugins {
+  id "org.hidetake.ssh" version "2.7.0"
+}
+
+remotes {
+    roboRIO {
+        host = '172.22.11.2'
+        user = 'lvuser'
+        password = ''
+        knownHosts = allowAnyHosts
+    }
+}
+
+model {
+    components {
+        pathfinder_arm_integration_test(NativeExecutableSpec) {
+            targetPlatform 'arm'
+
+            sources {
+                c {
+                    source {
+                        srcDirs 'src'
+                        includes = ['**/*.c']
+                    }
+                    exportedHeaders {
+                        srcDirs 'src'
+                        includes = ['**/*.h']
+                    }
+                    lib project: ':', library: 'pathfinder_arm', linkage: 'static'
+                }
+            }
+        }
+    }
+}
+
+task deploy {
+    doLast {
+        ssh.run {
+            session(remotes.roboRIO) {
+                execute "mkdir -p testpathfinder"
+                put from: file("build/exe/pathfinder_arm_integration_test/pathfinder_arm_integration_test"), into: "testpathfinder"
+                execute "chmod +x testpathfinder/pathfinder_arm_integration_test"
+            }
+        }
+    }
+}

@@ -1,0 +1,53 @@
+allprojects {
+    apply plugin: 'c'
+    apply plugin: 'assembler'
+
+    def compilerPrefix  = project.hasProperty("compilerPrefix") ? project.compilerPrefix    : "arm-frc-linux-gnueabi-"  // Most people will probably be compiling for RoboRIO
+    def compilerPath    = project.hasProperty("compilerPath")   ? project.compilerPath      : null
+
+    model {
+        platforms {
+            arm {
+                architecture 'arm'
+                operatingSystem 'linux'
+            }
+        }
+        toolChains {
+            armGcc(Gcc) {
+                if (compilerPath != null) path(compilerPath)
+                target('arm') {
+                    cCompiler.executable            = compilerPrefix + cCompiler.executable
+                    cppCompiler.executable          = compilerPrefix + cppCompiler.executable
+                    linker.executable               = compilerPrefix + linker.executable
+                    assembler.executable            = compilerPrefix + assembler.executable
+                    staticLibArchiver.executable    = compilerPrefix + staticLibArchiver.executable
+                }
+            }
+        }
+    }
+}
+
+model {
+    components {
+        pathfinder_arm(NativeLibrarySpec) {
+            targetPlatform 'arm'
+
+            binaries.all {
+                assembler.args '-mfpu=neon' 
+                assembler.args '-mcpu=cortex-a9'
+            }
+
+            sources {
+                c {
+                    source.srcDirs 'src/c'
+                    exportedHeaders.srcDirs 'src/include'
+                }
+                asm.source.srcDirs 'src/asm'
+            }
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.2.1'
+}
