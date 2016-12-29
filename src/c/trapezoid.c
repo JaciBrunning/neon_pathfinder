@@ -2,9 +2,18 @@
 
 #include <math.h>
 
-extern void pf_trapezoid_generate_internal(Trapezoid_Segment *segments, float time_delta, float acceleration, int segments_needed, float initial_distance, float initial_velocity);
+extern void pf_trapezoid_generate_internal(Segment1D *segments, float time_delta, float acceleration, int segments_needed, float initial_distance, float initial_velocity);
 
-int pf_trapezoid_generate_simd(Trapezoid_Segment *segments_out, float time_delta, float distance, float acceleration, float max_velocity) {
+int pf_trapezoid_segment_count(float time_delta, float distance, float acceleration, float max_velocity) {
+    float accel_dist = 0.5 * max_velocity * max_velocity / acceleration;
+    if (accel_dist * 2 > distance) {
+        return (int)(sqrt(distance/acceleration) / time_delta) * 2;
+    } else {
+        return (int)(max_velocity / acceleration / time_delta) * 2 + (distance - accel_dist * 2) / max_velocity / time_delta;
+    }
+}
+
+int pf_trapezoid_generate_simd(Segment1D *segments_out, float time_delta, float distance, float acceleration, float max_velocity) {
     float accel_dist = 0.5 * max_velocity * max_velocity / acceleration;    // Rearranging v^2 = 2as for s
 
     if (accel_dist * 2 > distance) {
@@ -33,7 +42,7 @@ int pf_trapezoid_generate_simd(Trapezoid_Segment *segments_out, float time_delta
     }
 }
 
-void pf_trapezoid_generate_c_internal(Trapezoid_Segment *segments, float time_delta, float acceleration, int segments_needed, float initial_distance, float initial_velocity) {
+void pf_trapezoid_generate_c_internal(Segment1D *segments, float time_delta, float acceleration, int segments_needed, float initial_distance, float initial_velocity) {
     int i;
     for (i = 0; i < segments_needed; i++) {
         float time = time_delta * i;
@@ -45,11 +54,11 @@ void pf_trapezoid_generate_c_internal(Trapezoid_Segment *segments, float time_de
         segments[i].distance = distance;
         segments[i].velocity = velocity;
         segments[i].acceleration = acceleration;
-        segments[i].time_delta = time_delta;
+        segments[i].jerk = 0.0;
     }
 }
 
-int pf_trapezoid_generate_c(Trapezoid_Segment *segments_out, float time_delta, float distance, float acceleration, float max_velocity) {
+int pf_trapezoid_generate_c(Segment1D *segments_out, float time_delta, float distance, float acceleration, float max_velocity) {
     float accel_dist = 0.5 * max_velocity * max_velocity / acceleration;    // Rearranging v^2 = 2as for s
 
     if (accel_dist * 2 > distance) {

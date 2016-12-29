@@ -35,6 +35,7 @@ model {
             binaries.all {
                 assembler.args '-mfpu=neon' 
                 assembler.args '-mcpu=cortex-a9'
+                cCompiler.args '-g'
             }
 
             sources {

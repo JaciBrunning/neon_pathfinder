@@ -11,7 +11,7 @@
 // d0-d1 {Q0} -> Distances
 // d2-d3 {Q1} -> Velocities
 // d4-d5 {Q2} -> Acceleration
-// d6-d7 {Q3} -> Time Delta
+// d6-d7 {Q3} -> Jerk
 
 .global pf_trapezoid_generate_internal
 pf_trapezoid_generate_internal:
@@ -36,7 +36,8 @@ pf_trapezoid_generate_internal:
     vmov.f32 q7, #4.0
 
     vdup.32 q2, r2  // Write acceleration into q2
-    vdup.32 q3, r1  // Write time deltas into q3
+    vmov.f32 q3, #0.0   // Write jerk into q3 (this is 0 since acceleration isn't sloped)
+    vdup.32 q14, r1     // Write time delta into q14
 
     vmov.f32 q4, #0.0  // Duplicate the segment index offset into q4. This is used in the calculation of time. Increases after each iteration set
     
@@ -54,7 +55,7 @@ pf_trapezoid_generate_internal:
         vadd.f32 q6, q4, q5
 
         // Store time index in q8 (t = time_delta * segment_index)
-        vmul.f32 q8, q3, q6
+        vmul.f32 q8, q14, q6
 
         // Store velocity in q1 (v = u + a*t)
         vmul.f32 q1, q8, q2
